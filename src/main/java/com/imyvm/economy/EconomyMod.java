@@ -17,7 +17,7 @@ public class EconomyMod implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("Economy");
 	public static final ModConfig CONFIG = new ModConfig();
 	public static Database data = new Database();
-
+	public static RateList rateList = new RateList();
 	@Override
 	public void onInitialize() {
 		CommandRegistrationCallback.EVENT.register(CommandRegistry::register);
@@ -26,6 +26,7 @@ public class EconomyMod implements ModInitializer {
 
 		CONFIG.loadAndSave();
 		initializeData();
+		initializeTax();
 
 		ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {
 			LOGGER.info("The economy database is saving");
@@ -35,9 +36,17 @@ public class EconomyMod implements ModInitializer {
 				LOGGER.error("Failed to save data: " + e);
 				throw new RuntimeException("Failed to save data", e);
 			}
+
+			LOGGER.info("The economy tax rate is saving");
+			try {
+				rateList.save();
+			} catch (Exception e) {
+				LOGGER.error("Failed to save rate data: " + e);
+				throw new RuntimeException("Failed to save rate data", e);
+			}
 		});
 
-		LOGGER.info("Imyvm Economy initialized");
+		LOGGER.info("Imyvm Economy initialized successfully.");
 	}
 
 	public void initializeData() {
@@ -48,6 +57,15 @@ public class EconomyMod implements ModInitializer {
 			throw new RuntimeException("Failed to initialize data", e);
 		}
 	}
+
+	public void initializeTax(){
+		try{
+			rateList.load();
+		} catch (IOException e) {
+			LOGGER.error("Failed to initialize rate data." + e);
+            throw new RuntimeException("Failed to initialize rate data", e);
+        }
+    }
 
 	public void registerEvents() {
 	}

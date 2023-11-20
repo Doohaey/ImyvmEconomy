@@ -7,6 +7,10 @@
   "commands.wallet.get": "§c{0} §6的余额为 §a{1}$",
   "commands.balance_top.header": "§e金§6钱§6排行：",
   "commands.balance_top.item": "§6{0}: §c{1} §a{2}$",
+  "commands.rate.query.player": "玩家{0}的税负实时数据为：\n 基于存款的税负率:{1}%\n基于当期花费的税负率:{2}%",
+  "commands.query.list" : "{0}类型的税率情况，根据相应的参考金额（在这个金额以上，下一项金额以下）可列出如下:\n金额\t税率",
+  "commands.query.list.stock" : "存量",
+  "commands.query.list.traffic" : "流量",
   "api.buy_goods.success": "§6你花费 §a{0}$ §6购买了 §e{1}§6，现在的余额是 §a{2}$",
   "api.buy_goods.failed.insufficient_balance": "§4错误：§6您不能购买价值 §a{0}$ 的 §e{1}§6，您的余额只有 §a{2}$"
 }

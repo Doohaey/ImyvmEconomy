@@ -1,8 +1,11 @@
 package com.imyvm.economy.commands;
 
 import com.imyvm.economy.EconomyMod;
+import com.imyvm.economy.TaxRate;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandRegistryAccess;
@@ -56,5 +59,34 @@ public class CommandRegistry {
             literal("balance_top")
                 .requires(source -> Permissions.check(source, EconomyMod.MOD_ID + ".balance_top", true))
                 .executes(new BalanceTopCommand()));
+
+        TaxCommand taxCommand = new TaxCommand();
+        dispatcher.register(
+                literal("tax")
+                        .requires(ServerCommandSource::isExecutedByPlayer)
+                        .then(literal("query")
+                                .executes(taxCommand)
+                                .then(literal("list")
+                                        .then(literal("stock")
+                                                .executes(taxCommand::runListStock))
+                                        .then(literal("traffic")
+                                                .executes(taxCommand::runListTraffic)))
+                                .then(argument("player", EntityArgumentType.player())
+                                        .executes(taxCommand::runPlayerQuery)))
+                        .then(literal("set")
+                                .requires(source -> Permissions.check(source, EconomyMod.MOD_ID + ".tax", 2))
+                                .then(argument("segmentation", IntegerArgumentType.integer(0))
+                                        .then(argument("rate", DoubleArgumentType.doubleArg(0.0))
+                                                .then(literal("stock")
+                                                        .executes(taxCommand::runSetStock))
+                                                .then(literal("traffic")
+                                                        .executes(taxCommand::runSetTraffic)))))
+                        .then(literal("delete")
+                                .requires(source -> Permissions.check(source, EconomyMod.MOD_ID + ".tax", 2))
+                                .then(argument("segmentation", IntegerArgumentType.integer(0))
+                                        .then(literal("stock")
+                                                .executes(taxCommand::runDeleteStock))
+                                        .then(literal("traffic")
+                                                .executes(taxCommand::runDeleteTraffic)))));
     }
 }
