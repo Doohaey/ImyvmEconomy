@@ -2,6 +2,7 @@ package com.imyvm.economy;
 
 import com.imyvm.economy.interfaces.Serializable;
 import com.imyvm.economy.util.MoneyUtil;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -32,6 +33,15 @@ public class PlayerData implements Serializable {
 
     public long addMoney(long amount) {
         this.money += amount;
+        return this.money;
+    }
+
+    public long addMoney(RateList.TaxRate.TaxType taxType, long amount, ServerPlayerEntity player) {
+        this.money += (long) (amount * (1 + EconomyMod.rateList.getTaxRate(amount, taxType)));
+        if (taxType == RateList.TaxRate.TaxType.TRAFFIC_TAX) {
+            RateList.PlayerTrafficData playerTrafficData = EconomyMod.rateList.getOrCreate(player);
+            playerTrafficData.addMoney(-amount);
+        }
         return this.money;
     }
 

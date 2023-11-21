@@ -1,16 +1,60 @@
 package com.imyvm.economy;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.io.*;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RateList {
+    public static class TaxRate {
+        public TaxRate(Double taxRate, TaxType taxType) {
+            this.taxRate = taxRate;
+            this.taxType = taxType;
+        }
+
+        public enum TaxType{
+            STOCK_TAX,
+            TRAFFIC_TAX
+        }
+        Double taxRate;
+        TaxType taxType;
+
+        public Double getTaxRate() {
+            return taxRate;
+        }
+
+        public void setTaxRate(Double taxRate) {
+            this.taxRate = taxRate;
+        }
+
+        public TaxType getTaxType() {
+            return taxType;
+        }
+
+        public void setTaxType(TaxType taxType) {
+            this.taxType = taxType;
+        }
+    }
+    public static class PlayerTrafficData extends PlayerData{
+        public String name;
+        public long turnoverCount;
+        public PlayerTrafficData(String name) {
+            super(name);
+            this.turnoverCount = 0;
+        }
+    }
     public final String RATE_RECORDER = "tax_rate_list.db";
     Map<Long, TaxRate> taxRateList;
+
+    Map<UUID, PlayerTrafficData> trafficDataList;
+    public PlayerTrafficData getOrCreate(ServerPlayerEntity player) {
+        return trafficDataList.computeIfAbsent(player.getUuid(),(u) -> new PlayerTrafficData(player.getEntityName()));
+    }
 
     public Double getTaxRate(long cashCount, TaxRate.TaxType taxType){
         Double formerValue = 0.0;
@@ -91,4 +135,6 @@ public class RateList {
             }
         }
     }
+
+
 }

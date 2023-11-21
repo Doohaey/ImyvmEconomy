@@ -88,7 +88,13 @@ public class EconomyMod implements ModInitializer {
 				} catch (IOException e) {
 					LOGGER.error("Error occurred when saving database", e);
 				}
-			}
+
+				try {
+					rateList.save();
+				} catch (IOException e) {
+                    LOGGER.error("Error occurred when saving rateList.");
+                }
+            }
 		});
 	}
 }

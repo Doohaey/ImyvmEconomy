@@ -2,7 +2,7 @@ package com.imyvm.economy.commands;
 
 import com.imyvm.economy.EconomyMod;
 import com.imyvm.economy.PlayerData;
-import com.imyvm.economy.TaxRate;
+import com.imyvm.economy.RateList;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -29,11 +29,11 @@ public class TaxCommand extends BaseCommand{
     }
 
     public int runListStock(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runList(context, TaxRate.TaxType.STOCK_TAX);
+        return runList(context, RateList.TaxRate.TaxType.STOCK_TAX);
     }
 
     public int runListTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runList(context, TaxRate.TaxType.TRAFFIC_TAX);
+        return runList(context, RateList.TaxRate.TaxType.TRAFFIC_TAX);
     }
 
     public int runPlayerQuery(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -43,46 +43,48 @@ public class TaxCommand extends BaseCommand{
     }
 
     public int runSetStock(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runSet(TaxRate.TaxType.STOCK_TAX, context);
+        return runSet(RateList.TaxRate.TaxType.STOCK_TAX, context);
     }
 
     public int runSetTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runSet(TaxRate.TaxType.TRAFFIC_TAX, context);
+        return runSet(RateList.TaxRate.TaxType.TRAFFIC_TAX, context);
     }
 
     public int runDeleteStock(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runDelete(TaxRate.TaxType.STOCK_TAX, context);
+        return runDelete(RateList.TaxRate.TaxType.STOCK_TAX, context);
     }
 
     public int runDeleteTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runDelete(TaxRate.TaxType.TRAFFIC_TAX, context);
+        return runDelete(RateList.TaxRate.TaxType.TRAFFIC_TAX, context);
     }
 
 
     private int runPlayerQuery(ServerPlayerEntity player, ServerPlayerEntity playerToQuery) {
         PlayerData playerData = EconomyMod.data.getOrCreate(playerToQuery);
-        Double stockRateToDisplay = EconomyMod.rateList.getTaxRate(playerData.getMoney(), TaxRate.TaxType.STOCK_TAX) * 100;
-        Double trafficRateToDisplay = null;//待完善
+
+        Double stockRateToDisplay = EconomyMod.rateList.getTaxRate(playerData.getMoney(), RateList.TaxRate.TaxType.STOCK_TAX) * 100;
+        Long currentPlayerTraffic = EconomyMod.rateList.getOrCreate(player).turnoverCount;
+        Double trafficRateToDisplay = EconomyMod.rateList.getTaxRate(currentPlayerTraffic, RateList.TaxRate.TaxType.TRAFFIC_TAX);
 
         player.sendMessage(tr("commands.rate.query.player",playerToQuery, stockRateToDisplay, trafficRateToDisplay));
         return Command.SINGLE_SUCCESS;
     }
 
-    private int runList(CommandContext<ServerCommandSource> context, TaxRate.TaxType taxType) throws CommandSyntaxException{
+    private int runList(CommandContext<ServerCommandSource> context, RateList.TaxRate.TaxType taxType) throws CommandSyntaxException{
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-        Map<Long,TaxRate> toDisplay = EconomyMod.rateList.getTaxRateList();
-        PriorityQueue<Map.Entry<Long, TaxRate>> heap = new PriorityQueue<>(Comparator.comparing(Map.Entry::getKey));
+        Map<Long, RateList.TaxRate> toDisplay = EconomyMod.rateList.getTaxRateList();
+        PriorityQueue<Map.Entry<Long, RateList.TaxRate>> heap = new PriorityQueue<>(Comparator.comparing(Map.Entry::getKey));
 
-        for (Map.Entry<Long, TaxRate> entry : toDisplay.entrySet()) {
+        for (Map.Entry<Long, RateList.TaxRate> entry : toDisplay.entrySet()) {
             if (entry.getValue().getTaxType() == taxType) {
                 heap.add(entry);
             }
         }
 
-        Text text = ((taxType == TaxRate.TaxType.STOCK_TAX) ? tr("commands.rate.query.list.stock") :
+        Text text = ((taxType == RateList.TaxRate.TaxType.STOCK_TAX) ? tr("commands.rate.query.list.stock") :
                 tr("commands.rate.query.list.traffic"));
         MutableText mutableText = (MutableText) tr("commands.rate.query.list", text);
-        for (Map.Entry<Long, TaxRate> entry : heap) {
+        for (Map.Entry<Long, RateList.TaxRate> entry : heap) {
             mutableText.append("\n").append(entry.getKey().toString()).append("\t").append(entry.getValue().getTaxRate().toString());
         }
 
@@ -91,7 +93,7 @@ public class TaxCommand extends BaseCommand{
         return Command.SINGLE_SUCCESS;
     }
 
-    private int runSet(TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context) {
+    private int runSet(RateList.TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context) {
         long segmentation = LongArgumentType.getLong(context, "segmentation");
         double rate = DoubleArgumentType.getDouble(context, "rate");
         ServerPlayerEntity player = context.getSource().getPlayer();
@@ -104,7 +106,7 @@ public class TaxCommand extends BaseCommand{
         return Command.SINGLE_SUCCESS;
     }
 
-    private int runDelete(TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context) {
+    private int runDelete(RateList.TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context) {
         ServerPlayerEntity player = context.getSource().getPlayer();
         long segmentation = LongArgumentType.getLong(context, "segmentation");
         if (EconomyMod.rateList.deleteExistingRate(segmentation,taxType)){
