@@ -14,7 +14,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -29,11 +28,13 @@ public class TaxCommand extends BaseCommand{
     }
 
     public int runListStock(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runList(context, RateList.TaxRate.TaxType.STOCK_TAX);
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        return runList(player, RateList.TaxRate.TaxType.STOCK_TAX,Long.MAX_VALUE);
     }
 
     public int runListTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return runList(context, RateList.TaxRate.TaxType.TRAFFIC_TAX);
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        return runList(player, RateList.TaxRate.TaxType.TRAFFIC_TAX,Long.MAX_VALUE);
     }
 
     public int runPlayerQuery(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -46,7 +47,7 @@ public class TaxCommand extends BaseCommand{
         return runSet(RateList.TaxRate.TaxType.STOCK_TAX, context);
     }
 
-    public int runSetTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    public int runSetTraffic(CommandContext<ServerCommandSource> context) throws CommandSyntaxException{
         return runSet(RateList.TaxRate.TaxType.TRAFFIC_TAX, context);
     }
 
@@ -59,24 +60,25 @@ public class TaxCommand extends BaseCommand{
     }
 
 
-    private int runPlayerQuery(ServerPlayerEntity player, ServerPlayerEntity playerToQuery) {
+    private int runPlayerQuery(ServerPlayerEntity player, ServerPlayerEntity playerToQuery) throws CommandSyntaxException {
         PlayerData playerData = EconomyMod.data.getOrCreate(playerToQuery);
 
-        Double stockRateToDisplay = EconomyMod.rateList.getTaxRate(playerData.getMoney(), RateList.TaxRate.TaxType.STOCK_TAX) * 100;
-        Long currentPlayerTraffic = EconomyMod.rateList.getOrCreate(player).turnoverCount;
-        Double trafficRateToDisplay = EconomyMod.rateList.getTaxRate(currentPlayerTraffic, RateList.TaxRate.TaxType.TRAFFIC_TAX);
+        Long playerStockCurrency = playerData.getMoney();
+        Long playerTrafficCurrency = EconomyMod.rateList.getOrCreate(player).turnoverCount;
 
-        player.sendMessage(tr("commands.rate.query.player",playerToQuery, stockRateToDisplay, trafficRateToDisplay));
+        player.sendMessage(tr("commands.rate.query.player"));
+        runList(player, RateList.TaxRate.TaxType.STOCK_TAX, playerStockCurrency);
+        runList(player, RateList.TaxRate.TaxType.TRAFFIC_TAX, playerTrafficCurrency);
+
         return Command.SINGLE_SUCCESS;
     }
 
-    private int runList(CommandContext<ServerCommandSource> context, RateList.TaxRate.TaxType taxType) throws CommandSyntaxException{
-        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+    private int runList(ServerPlayerEntity player, RateList.TaxRate.TaxType taxType, Long amount) throws CommandSyntaxException{
         Map<Long, RateList.TaxRate> toDisplay = EconomyMod.rateList.getTaxRateList();
-        PriorityQueue<Map.Entry<Long, RateList.TaxRate>> heap = new PriorityQueue<>(Comparator.comparing(Map.Entry::getKey));
+        PriorityQueue<Map.Entry<Long, RateList.TaxRate>> heap = new PriorityQueue<>(Map.Entry.comparingByKey());
 
         for (Map.Entry<Long, RateList.TaxRate> entry : toDisplay.entrySet()) {
-            if (entry.getValue().getTaxType() == taxType) {
+            if (entry.getValue().getTaxType() == taxType && entry.getKey() <= amount) {
                 heap.add(entry);
             }
         }
@@ -93,7 +95,7 @@ public class TaxCommand extends BaseCommand{
         return Command.SINGLE_SUCCESS;
     }
 
-    private int runSet(RateList.TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context) {
+    private int runSet(RateList.TaxRate.TaxType taxType, CommandContext<ServerCommandSource> context){
         long segmentation = LongArgumentType.getLong(context, "segmentation");
         double rate = DoubleArgumentType.getDouble(context, "rate");
         ServerPlayerEntity player = context.getSource().getPlayer();

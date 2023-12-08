@@ -7,7 +7,7 @@
   "commands.wallet.get": "{0}'s balance is {1}",
   "commands.balance_top.header": "Top Players:",
   "commands.balance_top.item": "{0}: {1} {2}$",
-  "commands.rate.query.player": "Tax rate for player {0} is：\n Stock tax:{1}%\n Traffic tax{2}%",
+  "commands.rate.query.player": "The tax rate related with the certain player can be divided into TWO parts, and:\n",
   "commands.rate.query.list" : "The tax rate list for {0} type can be listed as follows:\nCash Count\tRate",
   "commands.rate.query.list.stock" : "stock",
   "commands.rate.query.list.traffic" : "traffic",

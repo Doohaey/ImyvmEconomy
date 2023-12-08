@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntUnaryOperator;
 
@@ -45,6 +46,8 @@ public class EconomyMod implements ModInitializer {
 				throw new RuntimeException("Failed to save rate data", e);
 			}
 		});
+
+		handleTrafficRecordReset();
 
 		LOGGER.info("Imyvm Economy initialized successfully.");
 	}
@@ -96,5 +99,30 @@ public class EconomyMod implements ModInitializer {
                 }
             }
 		});
+	}
+
+	public void handleTrafficRecordReset(){
+		TimerTask task = new TimerTask() {
+			@Override
+			public void run() {
+				rateList.trafficDataList.clear();
+				try {
+					rateList.save();
+				} catch (Exception e) {
+					LOGGER.error("Failed to save rate data: " + e);
+					throw new RuntimeException("Failed to save rate data", e);
+				}
+			}
+		};
+		TimeZone timezone = TimeZone.getTimeZone(CONFIG.TIME_ZONE.getValue());
+		Calendar calendar = Calendar.getInstance(timezone);
+		calendar.add(Calendar.DAY_OF_MONTH,1);
+		calendar.set(Calendar.HOUR_OF_DAY,0);
+		calendar.set(Calendar.MINUTE,0);
+		calendar.set(Calendar.SECOND,0);
+		calendar.set(Calendar.MILLISECOND,0);
+
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(task, calendar.getTime(), 24 * 60 * 60 * 1000);
 	}
 }

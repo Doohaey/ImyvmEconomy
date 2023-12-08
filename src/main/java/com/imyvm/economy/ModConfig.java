@@ -5,6 +5,9 @@ import com.imyvm.hoki.config.HokiConfig;
 import com.imyvm.hoki.config.Option;
 import com.typesafe.config.Config;
 
+import java.time.ZoneId;
+import java.util.TimeZone;
+
 public class ModConfig extends HokiConfig {
     public static final String CONFIG_FILENAME = "imyvm_economy.conf";
 
@@ -26,5 +29,13 @@ public class ModConfig extends HokiConfig {
         88 * 100L,
         "The user's default balance (in cents)",
         Config::getLong
+    );
+
+    @ConfigOption
+    public final Option<String> TIME_ZONE = new Option<>(
+            "time.zone",
+            "Asia/Shanghai",
+            "Chinese Standard Time",
+            Config::getString
     );
 }

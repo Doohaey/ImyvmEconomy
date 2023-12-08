@@ -47,11 +47,18 @@ public class RateList {
             super(name);
             this.turnoverCount = 0;
         }
+
+        public PlayerTrafficData(String name, long amount) {
+            super(name);
+            this.turnoverCount = amount;
+        }
     }
     public final String RATE_RECORDER = "tax_rate_list.db";
+    public final String TURNOVER_RECORDER = "turnover_count.db";
     Map<Long, TaxRate> taxRateList;
 
     Map<UUID, PlayerTrafficData> trafficDataList;
+
     public PlayerTrafficData getOrCreate(ServerPlayerEntity player) {
         return trafficDataList.computeIfAbsent(player.getUuid(),(u) -> new PlayerTrafficData(player.getEntityName()));
     }
@@ -105,6 +112,16 @@ public class RateList {
     }
 
     public void load() throws IOException {
+        loadTaxRateList();
+        loadTurnover();
+    }
+
+    public void save() throws IOException {
+        saveRateList();
+        saveTurnover();
+    }
+
+    private void loadTaxRateList() throws IOException {
         File file = FabricLoader.getInstance().getGameDir().resolve("world").resolve(RATE_RECORDER).toFile();
 
         if (!file.exists()) {
@@ -123,7 +140,27 @@ public class RateList {
         }
     }
 
-    public void save() throws IOException {
+    private void loadTurnover() throws IOException {
+        File file = FabricLoader.getInstance().getGameDir().resolve("world").resolve(TURNOVER_RECORDER).toFile();
+
+        if (!file.exists()) {
+            trafficDataList = new ConcurrentHashMap<>();
+            return;
+        }
+
+        try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file))) {
+            int size = dataInputStream.readInt();
+            trafficDataList = new ConcurrentHashMap<>(size);
+            for (int i = 0; i < size; i++) {
+                UUID uuid = UUID.nameUUIDFromBytes(dataInputStream.readUTF().getBytes());
+                String name = dataInputStream.readUTF();
+                long amount = dataInputStream.readLong();
+                trafficDataList.put(uuid, new PlayerTrafficData(name,amount));
+            }
+        }
+    }
+
+    private void saveRateList() throws IOException {
         File file = FabricLoader.getInstance().getGameDir().resolve("world").resolve(RATE_RECORDER).toFile();
 
         try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file))) {
@@ -136,5 +173,17 @@ public class RateList {
         }
     }
 
+    private void saveTurnover() throws IOException {
+        File file = FabricLoader.getInstance().getGameDir().resolve("world").resolve(TURNOVER_RECORDER).toFile();
+
+        try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file))) {
+            dataOutputStream.writeInt(trafficDataList.size());
+            for (Map.Entry<UUID, PlayerTrafficData> entry : trafficDataList.entrySet()) {
+                dataOutputStream.writeUTF(entry.getKey().toString());
+                dataOutputStream.writeUTF(entry.getValue().name);
+                dataOutputStream.writeLong(entry.getValue().turnoverCount);
+            }
+        }
+    }
 
 }
