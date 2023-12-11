@@ -63,27 +63,15 @@ public class RateList {
         return trafficDataList.computeIfAbsent(player.getUuid(),(u) -> new PlayerTrafficData(player.getEntityName()));
     }
 
-    public Double getTaxRate(long cashCount, TaxRate.TaxType taxType){
-        Double formerValue = 0.0;
-        int size = taxRateList.size();
-        if (size == 0) return formerValue;
-
+    public PriorityQueue<Map.Entry<Long, TaxRate>> getMatchTaxRate(long cashCount, TaxRate.TaxType taxType) {
         PriorityQueue<Map.Entry<Long, TaxRate>> heap = new PriorityQueue<>(Comparator.comparing(Map.Entry::getKey));
         for (Map.Entry<Long, TaxRate> entry : taxRateList.entrySet()) {
-            if (entry.getValue().taxType == taxType) {
+            if (entry.getKey() <= cashCount && entry.getValue().taxType == taxType) {
                 heap.add(entry);
             }
         }
 
-        int index = 1;
-        for (Map.Entry<Long, TaxRate> entry : heap) {
-            if (entry.getKey() != Long.MIN_VALUE) {
-                if (index == size || (cashCount < entry.getKey())) return formerValue;
-                else formerValue = entry.getValue().getTaxRate();
-            }
-            index++;
-        }
-        return formerValue;
+        return heap;
     }
 
     public Map<Long, TaxRate> getTaxRateList(){

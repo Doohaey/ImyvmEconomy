@@ -7,6 +7,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.PriorityQueue;
 
 import static com.imyvm.economy.EconomyMod.CONFIG;
 
@@ -37,7 +40,23 @@ public class PlayerData implements Serializable {
     }
 
     public long addMoney(RateList.TaxRate.TaxType taxType, long amount, ServerPlayerEntity player) {
-        this.money += (long) (amount * (1 + EconomyMod.rateList.getTaxRate(amount, taxType)));
+        PriorityQueue<Map.Entry<Long, RateList.TaxRate>> heap = EconomyMod.rateList.getMatchTaxRate(amount, taxType);
+        int size = heap.size();
+        int iterator = 0;
+        long formerKey = 0;
+        Double formerRate = 0.0;
+        for (Map.Entry<Long, RateList.TaxRate> entry : heap){
+            iterator++;
+            this.money += (long) ((1 + formerRate) * (entry.getKey() - formerKey));
+
+            if (iterator == size) {
+                this.money += (long) ((1 + entry.getValue().taxRate) * (amount - entry.getKey()));
+            } else  {
+                formerKey = entry.getKey();
+                formerRate = entry.getValue().taxRate;
+            }
+
+        }
         if (taxType == RateList.TaxRate.TaxType.TRAFFIC_TAX) {
             RateList.PlayerTrafficData playerTrafficData = EconomyMod.rateList.getOrCreate(player);
             playerTrafficData.addMoney(-amount);
